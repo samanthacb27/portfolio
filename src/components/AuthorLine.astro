@@ -1,0 +1,39 @@
+---
+/* =====================================================================
+   AUTHOR LINE: the little "icon + name + date" row above each Musings post.
+   The icon is your circle logo (public/images/logo.png). To use a different
+   picture, change the src below.
+   ===================================================================== */
+const { date } = Astro.props;
+const label = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+const iso = date.toISOString().slice(0, 10);
+---
+<div class="author">
+  <img class="author-icon" src="/images/logo.png" alt="" width="40" height="40" />
+  <p class="author-text">
+    <span class="author-name">Samantha Brenneman</span>
+    <span class="author-dot" aria-hidden="true">·</span>
+    <time datetime={iso}>{label}</time>
+  </p>
+</div>
+
+<style>
+  .author { display: flex; align-items: center; gap: 0.75rem; margin: 0 0 1rem; }
+  .author-icon {
+    width: 2.5rem; height: 2.5rem; border-radius: 50%; display: block; flex: none;
+    transition: rotate 0.25s cubic-bezier(0.3, 1.6, 0.5, 1);
+  }
+  .author-text {
+    margin: 0; font-family: var(--sans, 'Figtree', system-ui, sans-serif);
+    font-size: 0.95rem; color: var(--brown, #5F481E); line-height: 1.3;
+  }
+  .author-name { font-weight: 600; color: var(--plum, #2D0D1A); }
+  .author-dot { margin: 0 0.35em; }
+
+  /* Tiny touch: the icon tips a little when you hover over a post */
+  :global(.musing:hover) .author-icon { rotate: -10deg; }
+  @media (prefers-reduced-motion: reduce) {
+    .author-icon { transition: none; }
+    :global(.musing:hover) .author-icon { rotate: 0deg; }
+  }
+</style>

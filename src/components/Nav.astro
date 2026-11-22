@@ -1,0 +1,125 @@
+---
+/* =====================================================================
+   NAV: the left-hand navigation (a top bar with a Menu button on phones).
+   To add or rename a page link, edit the "links" list below.
+   ===================================================================== */
+
+const links = [
+  { label: 'Home', href: '/' },
+  { label: 'About Me', href: '/about' },
+  { label: 'Editorial', href: '/editorial' },
+  { label: 'Graphic Design', href: '/graphic-design' },
+  { label: 'Play', href: '/play' },
+  { label: 'Musings', href: '/musings' },
+];
+
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const isCurrent = (href: string) => (href === '/' ? path === '/' : path === href || path.startsWith(href + '/'));
+---
+<header class="nav" id="site-nav">
+  <a class="logo" href="/" aria-label="Samantha Brenneman, home">
+    <img src="/images/logo.png" alt="" width="512" height="512" />
+  </a>
+
+  <button class="menu-btn" id="menu-btn" type="button" aria-expanded="false" aria-controls="nav-list">Menu</button>
+
+  <!-- Each tab gets two numbers: --i = the order it drops in, --r = the order it lifts away -->
+  <nav aria-label="Main">
+    <ul id="nav-list">
+      {links.map((l, i) => (
+        <li style={`--i:${i}; --r:${links.length - 1 - i}`}><a href={l.href} aria-current={isCurrent(l.href) ? 'page' : undefined}>{l.label}</a></li>
+      ))}
+    </ul>
+  </nav>
+
+</header>
+
+<style>
+  .nav {
+    position: sticky; top: 0; align-self: start; height: 100vh;
+    padding: 2rem 1.75rem; display: flex; flex-direction: column; gap: 2.5rem;
+  }
+  .logo { display: block; width: 5.25rem; border-radius: 50%; }
+  .logo img { width: 100%; height: auto; display: block; }
+
+  ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; }
+  li a {
+    display: inline-block; padding: 0.2rem 0;
+    text-decoration: none; font-weight: 500; font-size: 1.05rem;
+    transition: color 0.15s;
+  }
+  /* Text turns red on hover and when tabbing with the keyboard */
+  li a:hover, li a:focus-visible { color: var(--red-text); }
+
+  .menu-btn { display: none; }
+
+  @media (prefers-reduced-motion: reduce) { li a { transition: none; } }
+
+  /* ---- Phone layout: compact top bar with a Menu button ---- */
+  @media (max-width: 760px) {
+    .nav {
+      z-index: 20; height: auto; background: var(--paper);
+      flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      padding: 0.75rem 1.25rem; gap: 0; border-bottom: 1px solid var(--greige);
+    }
+    .logo { width: 3rem; }
+    .menu-btn {
+      display: inline-block; font: inherit; font-weight: 500; background: none; color: inherit;
+      border: 1px solid var(--plum); border-radius: 2rem; padding: 0.4rem 1rem; cursor: pointer;
+      margin-left: auto;   /* keeps the Menu button on the right edge of the bar */
+    }
+
+    /* The links float just under the bar, lined up with the Menu button's right edge.
+       The wrapper itself ignores taps so it never blocks the page underneath. */
+    nav {
+      position: absolute; top: 100%; right: 1.25rem;
+      width: max-content; pointer-events: none;
+    }
+    ul { padding: 0.6rem 0 0; gap: 0.5rem; justify-items: end; }
+
+    /* Each link is its own little tab, only as wide as its text */
+    li a {
+      display: block; padding: 0.45rem 1.1rem; font-size: 1rem;
+      background: var(--paper); border: 1px solid var(--plum); border-radius: 2rem;
+      pointer-events: auto;
+    }
+        /* Hover (and keyboard focus): the whole bubble turns red, the text turns light so it stays readable */
+    li a { transition: background 0.15s, border-color 0.15s, color 0.15s; }
+    li a:hover, li a:focus-visible {
+      background: var(--red-text);
+      border-color: var(--red-text);
+      color: var(--paper);
+    }
+
+    /* Closed: tabs are invisible, nudged up, and can't be tapped or tabbed to */
+    li {
+      opacity: 0; visibility: hidden; translate: 0 -0.6rem;
+      transition:
+        opacity 0.2s ease calc(var(--r) * 40ms),
+        translate 0.2s ease calc(var(--r) * 40ms),
+        visibility 0s linear calc(0.2s + var(--r) * 40ms);
+    }
+    /* Open: tabs drop in one after another, top to bottom */
+    .nav.open li {
+      opacity: 1; visibility: visible; translate: 0 0;
+      transition:
+        opacity 0.25s ease calc(var(--i) * 70ms),
+        translate 0.25s ease calc(var(--i) * 70ms),
+        visibility 0s linear calc(var(--i) * 70ms);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      li, .nav.open li, li a { transition: none; translate: 0 0; }
+    }
+  }
+</style>
+
+<script>
+  // @ts-nocheck  (stops VS Code underlining things; the code works fine)
+  // Opens and closes the Menu on phones.
+  const nav = document.getElementById('site-nav');
+  const btn = document.getElementById('menu-btn');
+  btn.addEventListener('click', () => {
+    const open = nav.classList.toggle('open');
+    btn.setAttribute('aria-expanded', String(open));
+  });
+</script>

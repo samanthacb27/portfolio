@@ -1,0 +1,23 @@
+---
+type: longform
+title: "Travel Diary: Pasticceria Pegaso"
+subtitle: "I have always been the type of person who has sought out places that I can claim as my own."
+cover: "../../assets/musings/pegaso-cover.jpg"
+coverAlt: "Grainy film photograph of a ceiling fresco"
+date: 2025-10-22
+---
+I have always been the type of person who has sought out places that I can claim as my own. Not to collect them like trinkets and hide them away so that no one can appreciate their beauty, but rather, I seek out these places with the intention of exploring each hidden corner, small quirks that are missed by fleeting visits. So often, we are stuck on our phones or worried about getting to the next place. The temptation of something shiny and new distracts us from the true beauty of life, being curious enough to explore what is right in front of our eyes.
+
+Now I know that’s rich for someone who has just traveled approximately 4,575 miles from home to study for a semester in Florence. While Florence is filled with sights that continually take my breath away, food that makes me wish I could never stop eating, and music that makes me want to dance in the street, the true beauty of Florence lies in a local Pasticceria, *Pegaso*.
+
+It is so easy to overlook these hidden gems while entranced by the view of Florence from the Piazzale Michelangelo. And if it weren't for just a simple coupon for two free cornettos and a cappuccino, I might never have discovered the place that makes me feel closest to home. This spot I've claimed for myself with the intention of getting an honorable "regular" status warms the heart with a hot, delicious cappuccino at the bar, wraps you up in a hug with the smile of the woman at the counter, who has been there to each morning donning a bright smile on her face and an ever brighter “Buongiorno!” on her lips.
+
+My first day in Florence was spent wandering around the network of cobblestone streets, willingly getting lost in the maze but unwilling to step into any stores or cafes that piqued my interest. I was too afraid to embarrass myself. Too afraid of how people would react to my lack of Italian. Simple tasks like ordering food or asking a stranger a question, things I never thought I would struggle to do, made my stomach twist and my throat clench. I kept passing cafés filled to the brim with patrons seeking their morning fix, ristorantes emitting smells that made my mouth water, and stores that beckoned me inside. But I kept on wandering, held back by the feeling of being an outsider in a strange, unknown place.
+
+My second day in Florence began with a plan. I was no longer going to let this fear keep me from finding the little corners of the city that might one day feel like mine, places where I could feel like I belong. The plan was simple: I was going to find a local cafe and order a cornetto and a cappuccino. Luckily, I had the coupon my Airbnb host gave me for the *pasticceria* across the street, 'Pasticceria Pegaso Firenze'. 
+
+My first time visiting felt like diving into the deep end. The room was filled with patrons all speaking fast Italian, laughing with each other, and enjoying their coffees by the bar. Despite the clear language barrier, I did not feel out of place or ostracized. I felt a part of a strong local community tucked away in a city filled to the brim with tourists. I struggled but ultimately succeeded in ordering a single cornetto to-go, or porta via, as the lady at the counter taught me; after seeing my confused face, she ushered me to the bar, where I could order a cappuccino. 
+
+The man standing next to me swiftly drank his in two swigs. Feeling inspired, and maybe a little challenged, I decided to down mine in three. Once I finished, I went to the register to pay, coupon in hand. The man at the register insisted I should grab another cornetto as the coupon allowed me to have two, but I insisted I only needed one. However, he would not let me go without taking something in its stead, encouraging me with a kind smile. So I grabbed a water and was on my way.  
+
+On the walk home, I couldn't contain my smile. By luck or fate or coincidence, I had already found a place I was itching to go back to, to establish as my own. I couldn’t wait any longer, and I decided to have a bite of the cornetto, and my god. It was delicious. Glazed in sticky, sweet honey, light and fluffy on the inside and crispy on the edges. It was perfect. And just like that, my smile dropped. I should never have said “no” to a second.

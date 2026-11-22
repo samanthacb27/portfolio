@@ -1,0 +1,291 @@
+---
+/* =====================================================================
+   PROJECT OVERLAY: the full-screen viewer that opens when you click a
+   project in Graphic Design or Play. It shows one image OR video at a time
+   next to the project's title and caption. You can click through the slides.
+
+   HOW TO USE IT ON A PAGE
+     1. Give each clickable project a button with  data-project="project-name".
+     2. Put each caption in  <template id="caption-project-name">.
+     3. Pass this component the list of projects:
+        <ProjectOverlay projects={...} />
+   (graphic-design.astro and play.astro already do all three.)
+
+   SLIDES can be images or videos. A video slide has type: 'video', a
+   video address (src) and a still picture (poster). Videos start muted and
+   loop, with play/pause and sound controls underneath. If a visitor has
+   "reduce motion" turned on, they don't start by themselves.
+
+   HOW YOU CAN GET AROUND IT
+     Click an arrow, press the left/right arrow keys, or swipe on a phone.
+     Esc, the X, or a click on the backdrop closes it.
+
+   LOOK: the colors come from the same shared settings as the magazine viewer,
+   near the top of src/styles/global.css:
+     --overlay-bg, --overlay-fg, --overlay-accent, --overlay-blur
+   Change them there and every overlay on the site changes together.
+
+   SHARING A PROJECT: opening a project adds its name to the web address
+   (like /graphic-design#bonnaroo-2026-poster). Anyone who opens that link
+   lands with that project already open, which is handy for applications.
+   ===================================================================== */
+const { projects } = Astro.props;
+// "<" is swapped for a safe code so the data can never break out of its tag.
+const json = JSON.stringify(projects).replace(/</g, '\\u003c');
+---
+<script type="application/json" id="pv-data" set:html={json} />
+
+<div class="pv-overlay" id="pv-overlay" role="dialog" aria-modal="true" aria-labelledby="pv-title" hidden>
+  <button class="pv-close" id="pv-close" type="button" aria-label="Close">
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false">
+      <path d="M5 5 L19 19 M19 5 L5 19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none" />
+    </svg>
+  </button>
+
+  <div class="pv-panel">
+    <div class="pv-media">
+      <button class="pv-arrow pv-prev" id="pv-prev" type="button" aria-label="Previous slide">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M15 5 L8 12 L15 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" /></svg>
+      </button>
+      <img id="pv-img" alt="" draggable="false" />
+      <video id="pv-video" playsinline muted loop controls preload="metadata" hidden></video>
+      <button class="pv-arrow pv-next" id="pv-next" type="button" aria-label="Next slide">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M9 5 L16 12 L9 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" /></svg>
+      </button>
+    </div>
+
+    <div class="pv-text" id="pv-text" tabindex="0">
+      <p class="pv-count" id="pv-count" aria-live="polite"></p>
+      <h2 class="pv-title" id="pv-title"></h2>
+      <p class="pv-meta" id="pv-meta"></p>
+      <p class="pv-slidecap" id="pv-slidecap"></p>
+      <div class="pv-caption" id="pv-caption"></div>
+    </div>
+  </div>
+</div>
+
+<style is:global>
+  /* ---- The backdrop: a see-through color over the page, matching the magazine viewer ---- */
+  .pv-overlay {
+    --pv-bg: var(--overlay-bg, rgba(45, 13, 26, 0.9));
+    --pv-fg: var(--overlay-fg, #F1EEE6);
+    --pv-accent: var(--overlay-accent, #FFDF57);
+    position: fixed; inset: 0; z-index: 100; display: none;
+    background: var(--pv-bg); color: var(--pv-fg);
+    -webkit-backdrop-filter: blur(var(--overlay-blur, 0px));
+    backdrop-filter: blur(var(--overlay-blur, 0px));
+    overflow-y: auto;
+    animation: pv-fade 0.2s ease;
+  }
+  .pv-overlay:not([hidden]) { display: block; }
+  @keyframes pv-fade { from { opacity: 0; } to { opacity: 1; } }
+
+  .pv-close {
+    position: fixed; top: 1rem; right: 1.25rem; z-index: 2;
+    width: 2.75rem; height: 2.75rem; display: grid; place-items: center;
+    border: 0; border-radius: 50%; background: transparent; color: var(--pv-fg); cursor: pointer;
+  }
+  .pv-close:hover { color: var(--pv-accent); }
+
+  .pv-overlay button:focus-visible, .pv-text:focus-visible, #pv-video:focus-visible { outline: 3px solid var(--pv-accent); outline-offset: 3px; }
+
+  /* ---- Desktop: image on the left, words on the right ---- */
+  .pv-panel {
+    min-height: 100%; box-sizing: border-box;
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(18rem, 26rem);
+    gap: 3rem; align-items: center;
+    padding: 4rem 4.5rem 3rem 5rem;
+  }
+  .pv-media { position: relative; display: flex; justify-content: center; align-items: center; touch-action: pan-y; user-select: none; }
+  #pv-img, #pv-video {
+    display: block; width: auto; height: auto;
+    max-width: 100%; max-height: calc(100vh - 7.5rem);
+    object-fit: contain; border-radius: 2px;
+    box-shadow: 0 18px 50px -18px rgba(0, 0, 0, 0.55);
+  }
+  #pv-img { opacity: 0; transition: opacity 0.25s ease; }
+  #pv-img.ready { opacity: 1; }
+  #pv-video { background: #000; }
+  #pv-img[hidden], #pv-video[hidden] { display: none; }
+
+  .pv-arrow {
+    position: absolute; top: 50%; transform: translateY(-50%); z-index: 1;
+    width: 2.75rem; height: 2.75rem; display: grid; place-items: center;
+    border: 0; border-radius: 50%; cursor: pointer;
+    /* Always a light disc with a dark arrow, so it stays visible on dark and light images alike */
+    background: #F1EEE6; color: #2D0D1A; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+    opacity: 0.92; transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+  .pv-arrow:hover { opacity: 1; transform: translateY(-50%) scale(1.08); }
+  .pv-prev { left: -1.25rem; }
+  .pv-next { right: -1.25rem; }
+  .pv-arrow[hidden] { display: none; }
+
+  .pv-text {
+    max-height: calc(100vh - 7.5rem); overflow-y: auto; padding-right: 0.5rem;
+    font-family: Figtree, system-ui, sans-serif;
+  }
+  .pv-count { margin: 0 0 0.6rem; font-size: 0.85rem; letter-spacing: 0.04em; opacity: 0.8; min-height: 1.2em; }
+  .pv-title {
+    margin: 0; font-family: 'Fraunces Variable', Fraunces, Georgia, serif;
+    font-weight: 500; font-size: clamp(1.6rem, 2.6vw, 2.2rem); line-height: 1.15;
+  }
+  .pv-meta { margin: 0.6rem 0 0; font-size: 0.9rem; opacity: 0.85; }
+  .pv-slidecap { margin: 1.1rem 0 0; font-size: 0.95rem; font-style: italic; }
+  .pv-slidecap:empty { display: none; }
+  .pv-caption { margin-top: 1.25rem; font-size: 1.05rem; line-height: 1.65; max-width: 60ch; }
+  .pv-caption p { margin: 0 0 1em; }
+
+  /* ---- Phones and small tablets: solid off-white, image on top, words below ---- */
+  @media (max-width: 899px) {
+    .pv-overlay {
+      --pv-bg: #F1EEE6; --pv-fg: #2D0D1A; --pv-accent: #EB380D;
+      -webkit-backdrop-filter: none; backdrop-filter: none;
+    }
+    .pv-panel { display: block; padding: 4rem 1.25rem 2.5rem; }
+    #pv-img, #pv-video { max-height: 65vh; box-shadow: 0 10px 30px -14px rgba(45, 13, 26, 0.5); }
+    .pv-prev { left: 0.4rem; }
+    .pv-next { right: 0.4rem; }
+    .pv-text { max-height: none; overflow: visible; margin-top: 1.5rem; padding-right: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pv-overlay { animation: none; }
+    #pv-img, .pv-arrow { transition: none; }
+    .pv-arrow:hover { transform: translateY(-50%); }
+  }
+</style>
+
+<script>
+  // @ts-nocheck  (stops VS Code underlining things; the code works fine)
+  // The overlay's behavior. Plain JavaScript, no extra libraries.
+  const overlay = document.getElementById('pv-overlay');
+  const projects = JSON.parse(document.getElementById('pv-data').textContent);
+  const el = (id) => document.getElementById(id);
+  const img = el('pv-img'), video = el('pv-video'), prevBtn = el('pv-prev'), nextBtn = el('pv-next'), closeBtn = el('pv-close'), textBox = el('pv-text');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  let current = null;   // the open project
+  let index = 0;        // which slide is showing
+  let opener = null;    // the button that opened it, so focus can go back there
+
+  // Stops the video and lets go of the file, so nothing keeps downloading in the background.
+  function stopVideo() {
+    video.pause();
+    video.removeAttribute('src');
+    video.removeAttribute('poster');
+    video.load();
+  }
+
+  // Shows one slide: the image or video, its caption, and the "1 / 2" counter.
+  function showSlide(i) {
+    const slides = current.slides;
+    index = (i + slides.length) % slides.length; // wraps around at the ends
+    const s = slides[index];
+    stopVideo();
+    if (s.type === 'video') {
+      img.hidden = true;
+      video.hidden = false;
+      video.width = s.width; video.height = s.height;
+      video.setAttribute('aria-label', s.alt);
+      video.poster = s.poster;
+      video.src = s.src;
+      video.muted = true; // videos only ever start muted
+      if (!reduceMotion.matches) video.play().catch(() => {});
+    } else {
+      video.hidden = true;
+      img.hidden = false;
+      img.classList.remove('ready');
+      img.alt = s.alt;
+      img.sizes = '(min-width: 900px) 60vw, 100vw';
+      img.srcset = s.srcset;
+      img.src = s.src;
+      img.width = s.width; img.height = s.height;
+    }
+    el('pv-count').textContent = slides.length > 1 ? `${index + 1} / ${slides.length}` : '';
+    el('pv-slidecap').textContent = s.caption;
+    prevBtn.hidden = nextBtn.hidden = slides.length < 2;
+    // Quietly start loading the next image so clicking through feels instant.
+    if (slides.length > 1) {
+      const n = slides[(index + 1) % slides.length];
+      if (n.type !== 'video') { const pre = new Image(); pre.srcset = n.srcset; pre.src = n.src; }
+    }
+  }
+  img.addEventListener('load', () => img.classList.add('ready'));
+  img.addEventListener('error', () => img.classList.add('ready'));
+
+  function open(slug, fromButton) {
+    const p = projects.find((x) => x.slug === slug);
+    if (!p) return;
+    current = p; opener = fromButton || null;
+    el('pv-title').textContent = p.title;
+    el('pv-meta').textContent = [p.year, ...p.tags].join('  ·  ');
+    const tpl = document.getElementById('caption-' + slug);
+    el('pv-caption').innerHTML = '';
+    if (tpl) el('pv-caption').appendChild(tpl.content.cloneNode(true));
+    textBox.scrollTop = 0; overlay.scrollTop = 0;
+    showSlide(0);
+    overlay.hidden = false;
+    document.documentElement.style.overflow = 'hidden'; // stops the page scrolling behind
+    closeBtn.focus();
+    history.replaceState(null, '', '#' + slug); // makes the project shareable by link
+  }
+
+  function close() {
+    if (overlay.hidden) return;
+    overlay.hidden = true;
+    stopVideo();
+    document.documentElement.style.overflow = '';
+    history.replaceState(null, '', location.pathname + location.search);
+    if (opener) opener.focus();
+    current = null; opener = null;
+  }
+
+  // Open from the gallery
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-project]');
+    if (b) open(b.dataset.project, b);
+  });
+
+  // Close: the X, or a click on the empty backdrop (not the image, video, arrows, or words)
+  closeBtn.addEventListener('click', close);
+  overlay.addEventListener('click', (e) => {
+    if (!e.target.closest('#pv-img, #pv-video, .pv-arrow, .pv-text, .pv-close')) close();
+  });
+
+  prevBtn.addEventListener('click', () => showSlide(index - 1));
+  nextBtn.addEventListener('click', () => showSlide(index + 1));
+
+  // Keyboard: Esc closes, arrows click through, Tab stays inside the overlay.
+  document.addEventListener('keydown', (e) => {
+    if (overlay.hidden) return;
+    if (e.key === 'Escape') { e.preventDefault(); close(); return; }
+    // While the video itself is selected, the arrow keys skip forward/back inside the video instead
+    const inVideo = document.activeElement === video;
+    if (!inVideo && current.slides.length > 1 && e.key === 'ArrowLeft') { e.preventDefault(); showSlide(index - 1); }
+    if (!inVideo && current.slides.length > 1 && e.key === 'ArrowRight') { e.preventDefault(); showSlide(index + 1); }
+    if (e.key === 'Tab') {
+      const stops = [closeBtn, prevBtn, video, nextBtn, textBox].filter((n) => !n.hidden);
+      const first = stops[0], last = stops[stops.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      else if (!stops.includes(document.activeElement)) { e.preventDefault(); first.focus(); }
+    }
+  });
+
+  // Swipe left or right on the image (works on phones and trackpads). Swipes that start on a
+  // video are left alone so they don't fight with the video's own controls; use the arrows there.
+  let startX = 0, startY = 0, tracking = false;
+  const media = overlay.querySelector('.pv-media');
+  media.addEventListener('pointerdown', (e) => { if (e.target.closest('.pv-arrow, #pv-video')) return; tracking = true; startX = e.clientX; startY = e.clientY; });
+  media.addEventListener('pointerup', (e) => {
+    if (!tracking) return; tracking = false;
+    const dx = e.clientX - startX, dy = e.clientY - startY;
+    if (current && current.slides.length > 1 && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) showSlide(index + (dx < 0 ? 1 : -1));
+  });
+  media.addEventListener('pointercancel', () => { tracking = false; });
+
+  // If someone arrives from a link like /play#sample-animation, open that project.
+  const fromLink = location.hash.slice(1);
+  if (fromLink && projects.some((p) => p.slug === fromLink)) open(fromLink, null);
+</script>

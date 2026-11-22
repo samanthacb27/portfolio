@@ -1,0 +1,37 @@
+---
+/* =====================================================================
+   PROSE: wraps the body of a Musings post and gives it the reading look:
+   warm serif, roomy line height, calm spacing.
+   ===================================================================== */
+const { size = 'normal' } = Astro.props;
+---
+<div class:list={['prose', size]}><slot /></div>
+
+<style>
+  .prose {
+    font-family: var(--serif, 'Fraunces', Georgia, serif);
+    font-size: 1.15rem; line-height: 1.8; color: var(--plum, #2D0D1A);
+  }
+  .prose.small { font-size: 1.08rem; line-height: 1.7; }
+
+  .prose :global(> *:first-child) { margin-top: 0; }
+  .prose :global(> *:last-child) { margin-bottom: 0; }
+  .prose :global(p) { margin: 0 0 1.3em; }
+  .prose :global(a) { color: var(--red-text, #CC2E08); text-underline-offset: 0.2em; }
+  .prose :global(a:hover) { text-decoration-thickness: 2px; }
+  .prose :global(h2), .prose :global(h3) {
+    font-family: var(--sans, 'Figtree', system-ui, sans-serif); font-weight: 600;
+    line-height: 1.25; margin: 2em 0 0.6em;
+  }
+  .prose :global(h2) { font-size: 1.5rem; }
+  .prose :global(h3) { font-size: 1.2rem; }
+  .prose :global(blockquote) {
+    margin: 1.6em 0; padding: 0.1em 0 0.1em 1.25rem;
+    border-left: 3px solid var(--greige, #C8C0AB); font-style: italic;
+  }
+  .prose :global(blockquote p:last-child) { margin-bottom: 0; }
+  .prose :global(ul), .prose :global(ol) { margin: 0 0 1.3em; padding-left: 1.4em; }
+  .prose :global(li) { margin-bottom: 0.4em; }
+  .prose :global(img) { max-width: 100%; height: auto; display: block; margin: 1.6em 0; }
+  .prose :global(hr) { border: 0; border-top: 1px solid var(--greige, #C8C0AB); margin: 2.2em 0; }
+</style>

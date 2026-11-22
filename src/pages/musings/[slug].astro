@@ -1,0 +1,77 @@
+---
+/* =====================================================================
+   MUSINGS POST PAGE  (src/pages/musings/[slug].astro)
+   One page for every LONGFORM post. The [slug] in the file name is filled in
+   from each post's file name, so sample-longform-one.md becomes
+   /musings/sample-longform-one. (Flash posts live only in the feed.)
+   ===================================================================== */
+import { getCollection, render } from 'astro:content';
+import { Image } from 'astro:assets';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AuthorLine from '../../components/AuthorLine.astro';
+import Prose from '../../components/Prose.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('musings', ({ data }) => data.type === 'longform');
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+const { title, subtitle, cover, coverAlt, date } = post.data;
+
+// Facts for search engines (invisible to visitors)
+const articleData = {
+  '@context': 'https://schema.org',
+  '@type': 'BlogPosting',
+  headline: title,
+  description: subtitle,
+  datePublished: date.toISOString().slice(0, 10),
+  author: { '@type': 'Person', name: 'Samantha Brenneman' },
+};
+---
+
+<BaseLayout title={`${title} | Musings | Samantha Brenneman`} description={subtitle}>
+  <article class="post">
+    <a class="back" href="/musings">← Musings</a>
+
+    <header class="post-head">
+      <h1>{title}</h1>
+      <p class="subtitle">{subtitle}</p>
+      <AuthorLine date={date} />
+    </header>
+
+    {cover && (
+      <Image class="post-cover" src={cover} alt={coverAlt ?? ''} widths={[640, 1000, 1400]} sizes="(max-width: 760px) 92vw, 640px" loading="eager" />
+    )}
+
+    <Prose><Content /></Prose>
+
+    <a class="back back-bottom" href="/musings">← Back to Musings</a>
+  </article>
+
+  <script type="application/ld+json" set:html={JSON.stringify(articleData)} />
+</BaseLayout>
+
+<style>
+  .post { max-width: 50rem; margin-inline: auto; }
+
+  .back {
+    display: inline-block; font-family: var(--sans, 'Figtree', system-ui, sans-serif);
+    font-weight: 500; color: var(--plum, #2D0D1A); text-decoration: none; margin-bottom: 2rem;
+  }
+  .back:hover, .back:focus-visible { color: var(--red-text, #CC2E08); }
+  .back-bottom { margin: 3rem 0 0; }
+
+  .post-head h1 {
+    margin: 0 0 0.6rem; font-family: var(--serif, 'Fraunces', Georgia, serif);
+    font-weight: 300; font-size: clamp(2.2rem, 5vw, 3.3rem); line-height: 1.1; letter-spacing: -0.01em;
+  }
+
+  .subtitle {
+    margin: 0 0 1.5rem; font-family: var(--serif, 'Fraunces', Georgia, serif);
+    font-size: clamp(1.1rem, 2.3vw, 1.3rem); line-height: 1.45; color: var(--brown, #5F481E);
+  }
+
+  .post-cover { display: block; width: 100%; height: auto; margin: 0 0 2.25rem; border-radius: 2px; }
+</style>

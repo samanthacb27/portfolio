@@ -1,0 +1,201 @@
+---
+// @ts-nocheck  (stops VS Code underlining the file-reading lines; the code works fine)
+/* =====================================================================
+   PLAY PAGE: a masonry gallery of art, animation, and other work. Pieces keep
+   their natural proportions and pack into columns. Clicking a piece opens the
+   overlay (src/components/ProjectOverlay.astro), which can show images AND video.
+
+   The pieces come from the files in src/content/play/ (one file each).
+   To change the order, edit "order" in those files: 1 is first (top left).
+   Animations: the "cover" is a still frame. The video file itself goes in
+   public/videos/play/ and is named in the file's "slides" list.
+   ===================================================================== */
+import { getCollection, render } from 'astro:content';
+import { Image, getImage } from 'astro:assets';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProjectOverlay from '../components/ProjectOverlay.astro';
+
+const entries = (await getCollection('play')).sort((a, b) => a.data.order - b.data.order);
+const kindLabel = { art: 'Art', animation: 'Animation', other: 'Other' };
+
+// Makes several sizes of one image (for the overlay) so phones download small
+// files and big screens get sharp ones. Astro does the resizing at build time.
+async function responsive(img) {
+  const widths = [...new Set([1000, 1600, 2400].map((w) => Math.min(w, img.width)))];
+  const made = await Promise.all(widths.map((w) => getImage({ src: img, width: w, format: 'webp', quality: 82 })));
+  const biggest = made[made.length - 1];
+  const mid = made[Math.min(1, made.length - 1)];
+  return {
+    src: mid.src,
+    srcset: made.map((m, i) => `${m.src} ${widths[i]}w`).join(', '),
+    width: biggest.attributes.width,
+    height: biggest.attributes.height,
+  };
+}
+
+// Turns one slide (an image, or a video plus its still) into what the overlay needs.
+async function slideData(s) {
+  if (s.video) {
+    const poster = await getImage({ src: s.poster, width: Math.min(1600, s.poster.width), format: 'webp', quality: 82 });
+    return {
+      type: 'video', alt: s.alt, caption: s.caption ?? '',
+      src: s.video, poster: poster.src,
+      width: s.poster.width, height: s.poster.height,
+    };
+  }
+  return { type: 'image', alt: s.alt, caption: s.caption ?? '', ...(await responsive(s.image)) };
+}
+
+const projects = await Promise.all(
+  entries.map(async (entry) => {
+    const { Content } = await render(entry); // the caption (the text under the front matter)
+    // The overlay starts on the cover, then continues through any extra slides.
+    // (Animations set coverInOverlay: false so the overlay opens straight on the video.)
+    const slides = [
+      ...(entry.data.coverInOverlay ? [{ image: entry.data.cover, alt: entry.data.coverAlt }] : []),
+      ...entry.data.slides,
+    ];
+    return {
+      entry,
+      Content,
+      overlay: {
+        slug: entry.id,
+        title: entry.data.title,
+        year: entry.data.year,
+        tags: [kindLabel[entry.data.kind], ...entry.data.tags],
+        slides: await Promise.all(slides.map(slideData)),
+      },
+    };
+  })
+);
+---
+<BaseLayout
+  title="Play | Samantha Brenneman"
+  description="Art, animation, and other playful projects by Samantha Brenneman."
+>
+  <section class="pl">
+    <h1 class="sr-only">Play</h1>
+
+    <ul class="pl-grid">
+      {projects.map(({ entry }, i) => {
+        const cover = entry.data.cover;
+        return (
+          <li class="pl-item" data-ratio={cover.height / cover.width}>
+            <button class="pl-card" type="button" data-project={entry.id} aria-haspopup="dialog">
+              <Image
+                src={cover}
+                alt={entry.data.coverAlt}
+                widths={[400, 700, 1000]}
+                sizes="(min-width: 1180px) 29vw, (min-width: 640px) 44vw, 46vw"
+                format="webp"
+                quality={80}
+                loading={i < 4 ? 'eager' : 'lazy'}
+              />
+              <span class="pl-kind" data-kind={entry.data.kind}>
+                {entry.data.kind === 'animation' && <span class="pl-play" aria-hidden="true">▶</span>}
+                {kindLabel[entry.data.kind]}
+              </span>
+              <span class="pl-title">{entry.data.title}<span class="pl-year">{entry.data.year}</span></span>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  </section>
+
+  <!-- Each piece's caption, kept hidden until the overlay opens. -->
+  {projects.map(({ entry, Content }) => (
+    <template id={`caption-${entry.id}`}><Content /></template>
+  ))}
+
+  <ProjectOverlay projects={projects.map((p) => p.overlay)} />
+</BaseLayout>
+
+<style>
+  .pl { padding: clamp(1.5rem, 4vw, 3.5rem); }
+
+  /* ---- Masonry: two columns on phones and tablets, three on laptops ---- */
+  .pl-grid {
+    list-style: none; margin: 0; padding: 0;
+    display: grid; grid-template-columns: repeat(2, 1fr); column-gap: 1rem; row-gap: 1rem;
+  }
+  @media (min-width: 640px)  { .pl-grid { column-gap: 1.5rem; row-gap: 1.5rem; } }
+  @media (min-width: 1180px) { .pl-grid { grid-template-columns: repeat(3, 1fr); } }
+
+  /* The small script at the bottom switches this on. It measures each image and
+     tells the grid how many tiny rows it needs, which is what packs the columns. */
+  .pl-grid.masonry-on { grid-auto-rows: 8px; row-gap: 0; }
+  .pl-item { align-self: start; }
+
+  .pl-card {
+    position: relative; display: block; width: 100%; padding: 0; border: 0;
+    background: none; cursor: pointer; text-align: left; font: inherit; color: inherit;
+  }
+  .pl-card :global(img) {
+    display: block; width: 100%; height: auto; border-radius: 2px;
+    box-shadow: 0 1px 2px rgba(45, 13, 26, 0.15), 0 12px 28px -10px rgba(45, 13, 26, 0.35);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+  .pl-card:hover :global(img), .pl-card:focus-visible :global(img) {
+    transform: translateY(-6px);
+    box-shadow: 0 1px 2px rgba(45, 13, 26, 0.15), 0 22px 36px -12px rgba(45, 13, 26, 0.4);
+  }
+  .pl-card:focus-visible { outline: 3px solid #2D0D1A; outline-offset: 4px; }
+
+  /* Small label in the corner: Art, Animation, or Other. Always visible, so touch screens get it too. */
+  .pl-kind {
+    position: absolute; top: 0.6rem; left: 0.6rem; padding: 0.2rem 0.6rem;
+    background: var(--paper, #F1EEE6); color: var(--plum, #2D0D1A);
+    font-family: Figtree, system-ui, sans-serif; font-weight: 600; font-size: 0.75rem;
+    letter-spacing: 0.03em; border-radius: 2rem; line-height: 1.4;
+    box-shadow: 0 1px 4px rgba(45, 13, 26, 0.25);
+    transition: transform 0.25s ease;
+  }
+  .pl-play { font-size: 0.6rem; margin-right: 0.35em; vertical-align: 0.08em; }
+  .pl-card:hover .pl-kind, .pl-card:focus-visible .pl-kind { transform: translateY(-6px); }  /* rides up with the image */
+
+  /* The title bar that slides up on hover. It is always in the page, so screen readers still get it. */
+  .pl-title {
+    position: absolute; left: 0; right: 0; bottom: 0; padding: 0.75rem 1rem;
+    background: rgba(45, 13, 26, 0.9); color: #F1EEE6;
+    font-family: Figtree, system-ui, sans-serif; font-weight: 500; font-size: 0.95rem; line-height: 1.3;
+    border-radius: 0 0 2px 2px;
+    opacity: 0; transform: translateY(6px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+  .pl-year { display: block; font-weight: 400; font-size: 0.8rem; opacity: 0.8; margin-top: 0.15rem; }
+  .pl-card:hover .pl-title, .pl-card:focus-visible .pl-title { opacity: 1; transform: none; }
+  /* Touch screens have no hover, so no title bar there. The title shows when the piece opens. */
+  @media (hover: none) { .pl-title { display: none; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pl-card :global(img), .pl-title, .pl-kind { transition: none; }
+    .pl-card:hover :global(img), .pl-card:focus-visible :global(img),
+    .pl-card:hover .pl-kind, .pl-card:focus-visible .pl-kind { transform: none; }
+    .pl-title { transform: none; }
+  }
+</style>
+
+<script>
+  // @ts-nocheck
+  // Masonry packing. If this script ever fails, the gallery still works as a plain grid.
+  const grid = document.querySelector('.pl-grid');
+  if (grid) {
+    const ROW = 8; // must match grid-auto-rows above
+    let lastWidth = 0;
+    const place = () => {
+      grid.classList.add('masonry-on');
+      const gap = parseFloat(getComputedStyle(grid).columnGap) || 24;
+      grid.querySelectorAll('.pl-item').forEach((li) => {
+        const width = li.getBoundingClientRect().width;
+        const height = width * Number(li.dataset.ratio);
+        li.style.gridRowEnd = 'span ' + Math.ceil((height + gap) / ROW);
+      });
+    };
+    place();
+    new ResizeObserver(() => {
+      const w = grid.getBoundingClientRect().width;
+      if (w !== lastWidth) { lastWidth = w; place(); }
+    }).observe(grid);
+  }
+</script>

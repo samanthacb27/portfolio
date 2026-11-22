@@ -1,0 +1,129 @@
+---
+/* =====================================================================
+   MUSINGS FEED  (src/pages/musings/index.astro)
+   One column, newest first. Two kinds of post, set by "type" in each file:
+     longform: a cover image with the title + subtitle in a caption bar; click to read.
+     flash:    the whole piece appears right here in the feed (image optional).
+   Posts live in src/content/musings/ (one .md file each).
+   ===================================================================== */
+import { getCollection, render } from 'astro:content';
+import { Image } from 'astro:assets';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AuthorLine from '../../components/AuthorLine.astro';
+import Prose from '../../components/Prose.astro';
+
+// Newest first
+const posts = (await getCollection('musings')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+// Flash posts show their full text in the feed, so prepare their bodies here
+const items = await Promise.all(
+  posts.map(async (post) => ({
+    post,
+    Content: post.data.type === 'flash' ? (await render(post)).Content : null,
+  }))
+);
+---
+
+<BaseLayout
+  title="Musings | Samantha Brenneman"
+  description="Essays and short notes by Samantha Brenneman, a journalism and studio art student at UNC-Chapel Hill. Also published on Substack."
+>
+  <section class="musings">
+
+    <div class="feed">
+      {items.map(({ post, Content }) =>
+        post.data.type === 'longform' ? (
+          <article class="musing longform" id={post.id}>
+            <AuthorLine date={post.data.date} />
+            <a class="cover-link" href={`/musings/${post.id}`} aria-labelledby={`t-${post.id}`} aria-describedby={`s-${post.id}`}>
+              {post.data.cover && (
+                <div class="cover-frame">
+                  <Image
+                    src={post.data.cover}
+                    alt={post.data.coverAlt ?? ''}
+                    widths={[480, 800, 1280]}
+                    sizes="(max-width: 760px) 92vw, 640px"
+                    loading="lazy"
+                  />
+                </div>
+              )}
+              <div class="caption-bar">
+                <h2 id={`t-${post.id}`}>{post.data.title}</h2>
+                <p id={`s-${post.id}`}>{post.data.subtitle}</p>
+              </div>
+            </a>
+          </article>
+        ) : (
+          <article class="musing flash" id={post.id}>
+            <AuthorLine date={post.data.date} />
+                        {post.data.title && <h2 class="flash-title">{post.data.title}</h2>}
+            <Prose size="small">{Content && <Content />}</Prose>
+            {post.data.cover && (
+              <Image
+                class="flash-image"
+                src={post.data.cover}
+                alt={post.data.coverAlt ?? ''}
+                widths={[480, 800, 1280]}
+                sizes="(max-width: 760px) 92vw, 640px"
+                loading="lazy"
+              />
+            )}
+          </article>
+        )
+      )}
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .musings { max-width: 50rem; margin-inline: auto; }
+
+  .page-title {
+    font-family: var(--serif, 'Fraunces', Georgia, serif); font-weight: 400;
+    font-size: clamp(2.6rem, 5vw, 4rem); line-height: 1; margin: 0 0 2rem;
+  }
+
+  .musing { padding: 2.25rem 0 2.5rem; border-top: 1px solid var(--greige, #C8C0AB); }
+
+  /* ---- Longform: cover image + caption bar ---- */
+  .cover-link {
+    display: block; color: inherit; text-decoration: none; overflow: hidden;
+    border-radius: 2px; box-shadow: 0 10px 26px -14px rgba(45, 13, 26, 0.45);
+  }
+  .cover-frame { overflow: hidden; aspect-ratio: 3 / 2; background: var(--paper-deep, #E7E2D4); }
+  .cover-frame :global(img) {
+    display: block; width: 100%; height: 100%; object-fit: cover;
+    transition: scale 0.4s ease;
+  }
+  .caption-bar {
+    padding: 1rem 1.25rem 1.15rem; background: var(--paper-deep, #E7E2D4); color: var(--plum, #2D0D1A);
+    transition: background 0.2s, color 0.2s;
+  }
+  .caption-bar h2 {
+    margin: 0; font-family: var(--serif, 'Fraunces', Georgia, serif);
+    font-weight: 300; font-size: clamp(1.4rem, 2.8vw, 1.8rem); line-height: 1.15;
+  }
+  .caption-bar p {
+    margin: 0.35rem 0 0; font-family: var(--serif, 'Fraunces', Georgia, serif);
+    font-size: 1.05rem; line-height: 1.45;
+  }
+  /* Hover/focus: image zooms a touch, the bar turns red like the nav tabs */
+  .cover-link:hover .cover-frame :global(img),
+  .cover-link:focus-visible .cover-frame :global(img) { scale: 1.04; }
+  .cover-link:hover .caption-bar,
+  .cover-link:focus-visible .caption-bar { background: var(--red-text, #CC2E08); color: var(--paper, #F1EEE6); }
+  .cover-link:focus-visible { outline: 2px solid var(--plum, #2D0D1A); outline-offset: 4px; }
+
+  /* ---- Flash: the whole piece, right in the feed ---- */
+  .flash-title {
+    margin: 0 0 0.6rem; font-family: var(--serif, 'Fraunces', Georgia, serif);
+    font-weight: 300; font-size: 1.4rem; line-height: 1.2;
+  }
+  .flash-image { display: block; width: 100%; height: auto; margin-top: 1.25rem; border-radius: 2px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cover-frame :global(img), .caption-bar { transition: none; }
+    .cover-link:hover .cover-frame :global(img),
+    .cover-link:focus-visible .cover-frame :global(img) { scale: 1; }
+  }
+</style>

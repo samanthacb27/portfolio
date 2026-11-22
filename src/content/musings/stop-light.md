@@ -1,0 +1,5 @@
+---
+type: flash
+date: 2026-4-10
+---
+I call my mom while waiting for the crosswalk to turn. She always answers. And if she doesn’t, I leave no room for rational thought. Instead, I hit the panic button in my head and come up with reasons why she wouldn’t answer the phone. Did she trip over her obese cat, like a boulder in her path, and go tumbling down the stairs? She answers. I fill her in on my day, tell her about everything that’s happened since we last talked. Not much, it’s only been a few hours. The crosswalk has yet to turn when I hear my name in the wind. Whipping my head around, I see my best friends in a car waiting at the light. I don’t think for a second before racing into the street, dodging cars and jumping into the back seat. I'm out of breath, laughter making it impossible to catch a glup of air. My mom is still on the other line, feeling my joy. Basking in the knowledge that her daughter is happy, she laughs too.

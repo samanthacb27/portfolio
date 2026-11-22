@@ -1,0 +1,24 @@
+---
+type: longform
+title: "The Art of Holding On"
+subtitle: "How junk journaling taught me how to live in the moment, embrace imperfection, and remember it all."
+cover: "../../assets/musings/art-of-holding-cover.JPG"
+coverAlt: "Black and white film photo of a spread in a junk journal"
+date: 2025-12-22
+---
+I decided to forgo an additional pair of pants and what I now realize was a very necessary winter coat to pack for my semester abroad in Florence, choosing instead to bring two journals, three cameras, and a bag full of art supplies. My friends looked at me like I was insane. I am not new to receiving these curious looks. I have received them more times than I can count when stashing away a receipt or the packaging from a bottle I very delicately peeled off. After a while, though, these curious glances evolved into something different. I somehow turned my friends into dumpster divers and trash collectors. They, too, began saving what others so absentmindedly throw away, just to give to me.
+
+At this point, it would be fair to assume that I am just a hoarder with boxes of junk stacked up in my apartment. But I promise, I put my collection to good use – through a junk journal. It started during my first year of college, unsure how to deal with the harsh reality that, sooner than I could fathom, I would be graduating and moving on to a new chapter of my life. The threatening tick of time frightened me to my core. To confront this fear, I chose my weapon carefully: junk journaling.
+
+My first junk journal started out very experimental and very messy. Over time, the journal developed into something more. I began incorporating sketches, documenting my evolution as an artist. The journal’s importance also developed over time, evolving from a time capsule to a sacred practice. I was developing a new sense of awareness, and a newfound appreciation for the material world.
+
+Along with the journals, I brought that sense of awareness and appreciation with me to Florence. However, I wasn’t prepared for how this practice would change the moment I stepped on to Italian soil. I was suddenly in a place where everything was worth remembering. There was beauty everywhere. Not merely in the towering cypress trees or the smoothly carved sculptures standing dramatically everywhere I looked. But also in the sound of a lone musician’s accordion on my walk to class, and in couples strolling hand-in-hand around the Santo Spirito market. Each day felt like a rush to experience everything, but it was the detours and the unexpected that made their way into my journal.
+
+My first day in Florence was spent wandering around the network of cobblestone streets, willingly getting lost in the maze but unwilling to step into any stores or cafes, fearful of making a mistake or looking clueless. I finally got the courage to order a cornetto in a small pasticceria south of the Arno, and by chance it ended up being the best cornetto I’ve ever had. I taped down the take-away bag containing that cornetto, with the hopes I would never forget the pastry that convinced me Florence and I were going to get along just fine.
+
+My next adventure took me to Cinque Terre, where nothing went the way I expected and I am so glad for it. My friend and I hopped on a bus at four in the morning that ended up taking us to Genoa, definitely not the small seaside town of Vernazza. But we lost ourselves in the old historic alleyways, danced in the street to a song wafting out an apartment window, and got lured into a small eatery by the mouthwatering smell of freshly baked focaccia and Genovese pesto. That oil-stained wrapper, now glued in my journal, reminds me to embrace serendipity.
+
+I now realize this practice of honest reflection was my little rebellion against the perfection and performativity of social media. I didn’t see that my fear of time passing was rooted in the overstimulation of social media, which often dragged me into a whirlwind of comparison and discouragement. But these images are often not reality, only showing a snapshot of what others want you to see, being shared with the intention of getting attention. Junk journals allow you to be real, to be messy and not worry about what others think. Draw an unfortunate-looking doodle, talk about the bad or beautiful or complicated day you had, tape down a picture of yourself care-free and unposed. It allows you to live in the moment and keep that moment forever.
+
+So as you can see, I could do without the extra pair of pants and that warm winter coat. Sure, I might be freezing, but at least I am creating. Warmth, I’ve learned, comes from more than just a coat. It comes from feeling connected to the world around me and awareness of the beauty of the life I am living. When I flip through the pages, I’m reminded why I came here — to live in the moment, to notice the beauty around me, and remember it forever.
+

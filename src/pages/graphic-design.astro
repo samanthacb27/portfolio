@@ -1,0 +1,168 @@
+---
+// @ts-nocheck  (stops VS Code underlining the file-reading lines; the code works fine)
+/* =====================================================================
+   GRAPHIC DESIGN PAGE: a masonry gallery (images keep their natural
+   proportions and pack into columns) that scrolls vertically.
+   Clicking a project opens the overlay (src/components/ProjectOverlay.astro).
+
+   The projects come from the files in src/content/graphic-design/ (one
+   file each). To change the order, edit "order" in those files:
+   1 is first (top left).
+   ===================================================================== */
+import { getCollection, render } from 'astro:content';
+import { Image, getImage } from 'astro:assets';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProjectOverlay from '../components/ProjectOverlay.astro';
+
+const entries = (await getCollection('graphicDesign')).sort((a, b) => a.data.order - b.data.order);
+
+// Makes several sizes of one image (for the overlay) so phones download small
+// files and big screens get sharp ones. Astro does the resizing at build time.
+async function responsive(img) {
+  const widths = [...new Set([1000, 1600, 2400].map((w) => Math.min(w, img.width)))];
+  const made = await Promise.all(widths.map((w) => getImage({ src: img, width: w, format: 'webp', quality: 82 })));
+  const biggest = made[made.length - 1];
+  const mid = made[Math.min(1, made.length - 1)];
+  return {
+    src: mid.src,
+    srcset: made.map((m, i) => `${m.src} ${widths[i]}w`).join(', '),
+    width: biggest.attributes.width,
+    height: biggest.attributes.height,
+  };
+}
+
+const projects = await Promise.all(
+  entries.map(async (entry) => {
+    const { Content } = await render(entry); // the caption (the text under the front matter)
+    // The overlay always starts on the cover, then continues through any extra slides.
+    const slides = [{ image: entry.data.cover, alt: entry.data.coverAlt }, ...entry.data.slides];
+    const slideData = await Promise.all(
+      slides.map(async (s) => ({ alt: s.alt, caption: s.caption ?? '', ...(await responsive(s.image)) }))
+    );
+    return {
+      entry,
+      Content,
+      overlay: {
+        slug: entry.id,
+        title: entry.data.title,
+        year: entry.data.year,
+        tags: entry.data.tags,
+        slides: slideData,
+      },
+    };
+  })
+);
+---
+<BaseLayout
+  title="Graphic Design"
+  description="Graphic design by Samantha Brenneman: album and poster design, typography, and layout, with the process behind each project."
+>
+  <section class="gd">
+    <h1 class="sr-only">Graphic Design</h1>
+
+    <ul class="gd-grid">
+      {projects.map(({ entry }, i) => {
+        const cover = entry.data.cover;
+        return (
+          <li class="gd-item" data-ratio={cover.height / cover.width}>
+            <button class="gd-card" type="button" data-project={entry.id} aria-haspopup="dialog">
+              <Image
+                src={cover}
+                alt={entry.data.coverAlt}
+                widths={[480, 800, 1200]}
+                sizes="(min-width: 1180px) 29vw, (min-width: 640px) 44vw, 92vw"
+                format="webp"
+                quality={80}
+                loading={i < 3 ? 'eager' : 'lazy'}
+              />
+              <span class="gd-title">{entry.data.title}<span class="gd-year">{entry.data.year}</span></span>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  </section>
+
+  <!-- Each project's caption, kept hidden until the overlay opens. -->
+  {projects.map(({ entry, Content }) => (
+    <template id={`caption-${entry.id}`}><Content /></template>
+  ))}
+
+  <ProjectOverlay projects={projects.map((p) => p.overlay)} />
+</BaseLayout>
+
+<style>
+  .gd { padding: clamp(1.5rem, 4vw, 3.5rem); }
+
+  /* ---- Masonry: one column on phones, two on tablets, three on laptops ---- */
+  .gd-grid {
+    list-style: none; margin: 0; padding: 0;
+    display: grid; grid-template-columns: 1fr; column-gap: 1.5rem; row-gap: 1.5rem;
+  }
+  @media (min-width: 640px)  { .gd-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 1180px) { .gd-grid { grid-template-columns: repeat(3, 1fr); } }
+
+  /* The small script at the bottom switches this on. It measures each image and
+     tells the grid how many tiny rows it needs, which is what packs the columns. */
+  .gd-grid.masonry-on { grid-auto-rows: 8px; row-gap: 0; }
+  .gd-item { align-self: start; }
+
+  .gd-card {
+    position: relative; display: block; width: 100%; padding: 0; border: 0;
+    background: none; cursor: pointer; text-align: left; font: inherit; color: inherit;
+  }
+  .gd-card :global(img) {
+    display: block; width: 100%; height: auto; border-radius: 2px;
+    box-shadow: 0 1px 2px rgba(45, 13, 26, 0.15), 0 12px 28px -10px rgba(45, 13, 26, 0.35);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+  .gd-card:hover :global(img), .gd-card:focus-visible :global(img) {
+    transform: translateY(-6px);
+    box-shadow: 0 1px 2px rgba(45, 13, 26, 0.15), 0 22px 36px -12px rgba(45, 13, 26, 0.4);
+  }
+  .gd-card:focus-visible { outline: 3px solid #2D0D1A; outline-offset: 4px; }
+
+  /* The title bar that slides up on hover. It is always in the page, so screen readers still get it. */
+  .gd-title {
+    position: absolute; left: 0; right: 0; bottom: 0; padding: 0.75rem 1rem;
+    background: rgba(45, 13, 26, 0.9); color: #F1EEE6;
+    font-family: Figtree, system-ui, sans-serif; font-weight: 500; font-size: 0.95rem; line-height: 1.3;
+    border-radius: 0 0 2px 2px;
+    opacity: 0; transform: translateY(6px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+  .gd-year { display: block; font-weight: 400; font-size: 0.8rem; opacity: 0.8; margin-top: 0.15rem; }
+  .gd-card:hover .gd-title, .gd-card:focus-visible .gd-title { opacity: 1; transform: none; }
+  /* Touch screens have no hover, so no title bar there. The title shows when the project opens. */
+  @media (hover: none) { .gd-title { display: none; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gd-card :global(img), .gd-title { transition: none; }
+    .gd-card:hover :global(img), .gd-card:focus-visible :global(img) { transform: none; }
+    .gd-title { transform: none; }
+  }
+</style>
+
+<script>
+  // @ts-nocheck  (stops VS Code underlining lines; the code works fine)
+  // Masonry packing. If this script ever fails, the gallery still works as a plain grid.
+  const grid = document.querySelector('.gd-grid');
+  if (grid) {
+    const ROW = 8; // must match grid-auto-rows above
+    let lastWidth = 0;
+    const place = () => {
+      grid.classList.add('masonry-on');
+      const gap = parseFloat(getComputedStyle(grid).columnGap) || 24;
+      grid.querySelectorAll('.gd-item').forEach((li) => {
+        const width = li.getBoundingClientRect().width;
+        const height = width * Number(li.dataset.ratio);
+        li.style.gridRowEnd = 'span ' + Math.ceil((height + gap) / ROW);
+      });
+    };
+    place();
+    new ResizeObserver(() => {
+      const w = grid.getBoundingClientRect().width;
+      if (w !== lastWidth) { lastWidth = w; place(); }
+    }).observe(grid);
+  }
+</script>

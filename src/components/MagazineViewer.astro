@@ -1,0 +1,309 @@
+---
+/* =====================================================================
+   MAGAZINE VIEWER: the full-screen overlay where a magazine opens and
+   you flip through it, with your process caption underneath.
+
+   Anything on a page can open it by having these attributes:
+     data-magazine="slug"          (the magazine's name)
+     data-folder="folder-name"     (where its page images are, in public/flipbooks/)
+     data-count="12"               (how many page images)
+     data-width="1000" data-height="1333"   (size of one page image)
+     data-title="Magazine title"
+   and the caption must be in a  <template id="caption-slug">  on the page.
+
+   LOOK OF THE OVERLAY (desktop): the backdrop color, its text color, and its
+   accent color come from three settings near the top of src/styles/global.css:
+     --overlay-bg, --overlay-fg, --overlay-accent   (and optionally --overlay-blur)
+   Change them there and every overlay on the site changes together.
+
+   This is one self-contained piece on purpose. The page-turning effect comes
+   from the free "page-flip" library; if you ever want a different effect, only
+   this file changes.
+   ===================================================================== */
+---
+<div class="mv-overlay" id="mv-overlay" role="dialog" aria-modal="true" aria-labelledby="mv-title" hidden>
+  <h2 class="sr-only" id="mv-title">Magazine viewer</h2>
+
+  <button class="mv-close" id="mv-close" type="button" aria-label="Close">
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false">
+      <path d="M5 5 L19 19 M19 5 L5 19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none" />
+    </svg>
+  </button>
+
+  <div class="mv-stage" id="mv-stage"></div>
+
+  <div class="mv-below">
+    <div class="mv-controls">
+      <button class="mv-ctrl" id="mv-prev" type="button" aria-label="Previous page">&larr; Prev</button>
+      <span class="mv-count" id="mv-count" aria-live="polite"></span>
+      <button class="mv-ctrl" id="mv-next" type="button" aria-label="Next page">Next &rarr;</button>
+    </div>
+    <div class="mv-caption" id="mv-caption"></div>
+  </div>
+</div>
+
+<style is:global>
+  /* ---- Backdrop: a see-through color over the page, with a matching text color ---- */
+  .mv-overlay {
+    position: fixed; inset: 0; z-index: 100; display: none; flex-direction: column;
+    background: var(--overlay-bg, rgba(45, 13, 26, 0.9));
+    color: var(--overlay-fg, #F1EEE6);
+    -webkit-backdrop-filter: blur(var(--overlay-blur, 0px));
+    backdrop-filter: blur(var(--overlay-blur, 0px));
+  }
+  .mv-overlay.open { display: flex; }
+
+  /* On phones the overlay is solid, so the page behind never distracts from the pages */
+  @media (max-width: 760px) {
+    .mv-overlay { background: var(--paper); color: var(--plum); -webkit-backdrop-filter: none; backdrop-filter: none; --overlay-accent: var(--red-text); }
+  }
+
+  /* ---- The X in the top right corner ---- */
+  .mv-close {
+    position: absolute; z-index: 2;
+    top: max(0.9rem, env(safe-area-inset-top, 0px)); right: clamp(0.9rem, 3vw, 2rem);
+    width: 2.75rem; height: 2.75rem; padding: 0; display: grid; place-items: center;
+    background: none; border: 0; border-radius: 50%; color: inherit; cursor: pointer;
+    transition: color 0.15s;
+  }
+  .mv-close:hover { color: var(--overlay-accent, #FFDF57); }
+  .mv-overlay :focus-visible { outline-color: currentColor; }
+
+  /* ---- Stage, controls, caption ---- */
+  .mv-stage { flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 3.5rem clamp(0.5rem, 3vw, 2rem) 0.5rem; }
+  .mv-book { transition: transform 0.9s cubic-bezier(0.4, 0, 0.2, 1); }   /* glides in time with the page turning */
+  .mv-below { flex: none; padding: 0.5rem clamp(1.25rem, 5vw, 4.5rem) max(1.25rem, env(safe-area-inset-bottom, 0px)); display: grid; gap: 0.75rem; justify-items: center; }
+  .mv-controls { display: flex; align-items: center; gap: 1rem; }
+  .mv-ctrl {
+    font: inherit; font-size: 0.95rem; background: none; color: inherit; cursor: pointer;
+    border: 1px solid color-mix(in srgb, currentColor 40%, transparent); border-radius: 2rem; padding: 0.35rem 1rem;
+  }
+  .mv-ctrl:hover:not(:disabled) { color: var(--overlay-accent, #FFDF57); border-color: var(--overlay-accent, #FFDF57); }
+  .mv-ctrl:disabled { opacity: 0.4; cursor: default; }
+  .mv-count { font-size: 0.95rem; opacity: 0.85; min-width: 8rem; text-align: center; }
+  .mv-caption { max-width: 44rem; font-size: 0.98rem; line-height: 1.55; max-height: 22vh; overflow-y: auto; }
+  .mv-caption p { margin: 0 0 0.6rem; }
+  .mv-caption p:last-child { margin-bottom: 0; }
+
+  /* One magazine page */
+  .mv-page { background: #fbf9f4; overflow: hidden; }
+  .mv-page img { display: block; width: 100%; height: 100%; object-fit: cover; user-select: none; -webkit-user-drag: none; }
+  .mv-page.mv-wait { background: #e7e2d4; }   /* soft placeholder while an image loads */
+
+  @media (prefers-reduced-motion: reduce) {
+    .mv-book { transition: none; }
+    .mv-close { transition: none; }
+  }
+</style>
+
+<script>
+  // @ts-nocheck  (stops VS Code underlining things; the code works fine)
+  const overlay = document.getElementById('mv-overlay');
+  if (overlay) {
+    // Move the overlay to the top level of the page, so the rest of the page can be switched off while it is open.
+    document.body.appendChild(overlay);
+    overlay.hidden = false;
+
+    const stage = document.getElementById('mv-stage');
+    const captionEl = document.getElementById('mv-caption');
+    const countEl = document.getElementById('mv-count');
+    const titleEl = document.getElementById('mv-title');
+    const prevBtn = document.getElementById('mv-prev');
+    const nextBtn = document.getElementById('mv-next');
+    const closeBtn = document.getElementById('mv-close');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    let flip = null;        // the page-turning object
+    let current = null;     // details of the magazine that is open (and the size of one page)
+    let spreads = [];       // the left-page number of every view, in order: cover, 2-3, 4-5, ...
+    let loaded = new Set(); // which page images have been requested already
+    let opener = null;      // the cover that was clicked, so focus can go back to it
+    let mounting = false;
+
+    const pad = (n) => String(n).padStart(3, '0');
+
+    /* ---- Keep a closed book centered ----
+       The page-turning library puts a closed book's cover on the right half of the screen.
+       We slide the whole book half a page sideways so the cover (and the back cover) sit in
+       the middle, and let it glide back as the book opens. */
+    function offsetFor(index) {
+      if (!flip || flip.getOrientation() === 'portrait') return 0;     // phones show one page, already centered
+      const n = current.count;
+      if (index === 0) return -current.pageW / 2;                       // front cover alone
+      if (n % 2 === 0 && index === n - 1) return current.pageW / 2;     // back cover alone
+      return 0;                                                         // two pages showing
+    }
+    function shiftTo(index, animate = true) {
+      const book = stage.firstElementChild;
+      if (!book) return;
+      if (!animate) book.style.transition = 'none';
+      book.style.transform = 'translateX(' + offsetFor(index) + 'px)';
+      if (!animate) { void book.offsetWidth; book.style.transition = ''; }
+    }
+    // Which view comes next or before this one? (step is +1 or -1)
+    function neighbor(from, step) {
+      const k = spreads.indexOf(from);
+      if (k === -1) return from;
+      return spreads[Math.min(spreads.length - 1, Math.max(0, k + step))];
+    }
+    function go(step) {
+      if (!flip) return;
+      shiftTo(neighbor(flip.getCurrentPageIndex(), step));   // start sliding right away, in time with the turn
+      step > 0 ? flip.flipNext() : flip.flipPrev();
+    }
+
+    // Only download the pages near the one you're looking at, so opening a magazine stays light.
+    function loadAround(index) {
+      if (!current) return;
+      for (let i = Math.max(0, index - 3); i <= Math.min(current.count - 1, index + 5); i++) {
+        if (loaded.has(i)) continue;
+        loaded.add(i);
+        const page = stage.querySelectorAll('.mv-page')[i];
+        const img = page && page.querySelector('img');
+        if (img && img.dataset.src) {
+          img.addEventListener('load', () => page.classList.remove('mv-wait'), { once: true });
+          img.src = img.dataset.src;
+        }
+      }
+    }
+
+    function updateControls() {
+      if (!flip) return;
+      const i = flip.getCurrentPageIndex();
+      const total = current.count;
+      const single = flip.getOrientation() === 'portrait';
+      countEl.textContent = (single || i === 0 || i >= total - 1)
+        ? 'Page ' + (i + 1) + ' of ' + total
+        : 'Pages ' + (i + 1) + '\u2013' + (i + 2) + ' of ' + total;
+      prevBtn.disabled = i <= 0;
+      nextBtn.disabled = i >= total - 1;
+      loadAround(i);
+    }
+
+    async function mount(startPage) {
+      if (mounting) return;
+      mounting = true;
+      if (flip) { flip.destroy(); flip = null; }
+
+      // Fresh container and page elements
+      stage.innerHTML = '';
+      const book = document.createElement('div');
+      book.className = 'mv-book';
+      stage.appendChild(book);
+      for (let i = 0; i < current.count; i++) {
+        const page = document.createElement('div');
+        page.className = 'mv-page mv-wait';
+        if (i === 0 || i === current.count - 1) page.setAttribute('data-density', 'hard'); // covers feel stiffer
+        const img = document.createElement('img');
+        img.alt = 'Page ' + (i + 1);
+        img.width = current.w; img.height = current.h;
+        img.decoding = 'async'; img.draggable = false;
+        img.dataset.src = '/flipbooks/' + current.folder + '/page-' + pad(i + 1) + '.webp';
+        page.appendChild(img);
+        book.appendChild(page);
+      }
+      loaded = new Set();
+      spreads = [0];
+      for (let i = 1; i < current.count; i += 2) spreads.push(i);
+
+      // Size the book to fit the screen, leaving room for the buttons and the caption
+      const box = stage.getBoundingClientRect();
+      const ratio = current.w / current.h;
+      const narrow = box.width < 700;
+      let h = Math.min(box.height - 60, 900);
+      h = Math.min(h, (narrow ? box.width : box.width / 2) / ratio);   // one page on narrow screens, two on wide ones
+      h = Math.max(260, Math.floor(h));
+      const w = Math.floor(h * ratio);
+      current.pageW = w;
+
+      const { PageFlip } = await import('page-flip');
+      flip = new PageFlip(book, {
+        width: w, height: h, size: 'fixed', showCover: true, usePortrait: true,
+        maxShadowOpacity: 0.45, drawShadow: true, mobileScrollSupport: false,
+        flippingTime: reduceMotion ? 1 : 900, startPage: startPage || 0,
+      });
+      flip.loadFromHTML(book.querySelectorAll('.mv-page'));
+      flip.on('flip', () => { updateControls(); shiftTo(flip.getCurrentPageIndex()); });
+      flip.on('changeState', (e) => {
+        try {
+          if (e.data === 'flipping') {
+            // Also catches turns made by dragging or clicking a page: slide toward where the turn is heading
+            const dir = flip.getFlipController().calc.getDirection();   // 0 = forward, 1 = back
+            if (dir === 0 || dir === 1) shiftTo(neighbor(flip.getCurrentPageIndex(), dir === 0 ? 1 : -1));
+          } else if (e.data === 'read') {
+            shiftTo(flip.getCurrentPageIndex());                          // settle on the true position
+          }
+        } catch (err) { /* if the library ever changes, the book just settles after each turn */ }
+      });
+      updateControls();
+      shiftTo(flip.getCurrentPageIndex(), false);    // start centered, with no sliding
+      mounting = false;
+    }
+
+    async function openMagazine(trigger) {
+      opener = trigger;
+      const d = trigger.dataset;
+      current = { slug: d.magazine, folder: d.folder, count: Number(d.count), w: Number(d.width), h: Number(d.height), pageW: 0 };
+      titleEl.textContent = d.title || 'Magazine viewer';
+      const tpl = document.getElementById('caption-' + d.magazine);
+      captionEl.innerHTML = tpl ? tpl.innerHTML : '';
+
+      overlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      document.querySelector('.shell')?.setAttribute('inert', '');   // switch the page behind off for keyboards and screen readers
+      closeBtn.focus();
+      await mount(0);
+    }
+
+    function closeMagazine() {
+      if (flip) { flip.destroy(); flip = null; }
+      stage.innerHTML = '';
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+      document.querySelector('.shell')?.removeAttribute('inert');
+      current = null;
+      if (opener) opener.focus();
+    }
+
+    document.addEventListener('click', (e) => {
+      const trigger = e.target.closest('[data-magazine]');
+      if (trigger) openMagazine(trigger);
+    });
+    closeBtn.addEventListener('click', closeMagazine);
+    prevBtn.addEventListener('click', () => go(-1));
+    nextBtn.addEventListener('click', () => go(1));
+
+    // Clicking the see-through backdrop closes the viewer. (Only when the click both started and
+    // ended on the backdrop, so dragging a page corner and letting go outside the book won't close it.)
+    const onBackdrop = (el) => !el.closest('.mv-book, .mv-controls, .mv-caption, .mv-close');
+    let downOnBackdrop = false;
+    overlay.addEventListener('pointerdown', (e) => { downOnBackdrop = onBackdrop(e.target); });
+    overlay.addEventListener('click', (e) => {
+      if (downOnBackdrop && onBackdrop(e.target)) closeMagazine();
+      downOnBackdrop = false;
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (!overlay.classList.contains('open')) return;
+      if (e.key === 'Escape') { closeMagazine(); return; }
+      if (e.key === 'ArrowRight') { e.preventDefault(); go(1); }
+      if (e.key === 'ArrowLeft')  { e.preventDefault(); go(-1); }
+      if (e.key === 'Tab') {                          // keep keyboard focus inside the viewer
+        const items = [closeBtn, prevBtn, nextBtn].filter((x) => !x.disabled);
+        const first = items[0], last = items[items.length - 1];
+        const active = document.activeElement;
+        if (e.shiftKey && active === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && active === last) { e.preventDefault(); first.focus(); }
+        else if (!items.includes(active)) { e.preventDefault(); first.focus(); }
+      }
+    });
+
+    // If the window changes shape (for example a phone turns sideways), rebuild at the same page.
+    let timer;
+    window.addEventListener('resize', () => {
+      if (!overlay.classList.contains('open') || !flip) return;
+      clearTimeout(timer);
+      timer = setTimeout(() => mount(flip ? flip.getCurrentPageIndex() : 0), 250);
+    });
+  }
+</script>

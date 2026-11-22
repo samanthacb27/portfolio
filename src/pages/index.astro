@@ -1,0 +1,159 @@
+---
+/* =====================================================================
+   HOME PAGE, with the typing animation.
+
+   EDIT HERE: the role words and the timing live in this block.
+   - roles:      the words that type in, in order. The first one shows when the page loads.
+   - firstHold:  how long (in milliseconds) the first role stays before the animation starts.
+                 6000 = 6 seconds.
+   - hold:       how long each role stays on screen once it has finished typing.
+                 3000 = 3 seconds.
+   ===================================================================== */
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const roles = [
+  'an aspiring publisher',
+  'a student',
+  'an artist',
+  'an editor',
+  'a designer',
+  'a writer',
+  'a book lover',
+];
+const firstHold = 3000;
+const hold = 2000;
+---
+<BaseLayout description="Samantha Brenneman is an aspiring publisher, journalist, illustrator, and editor dedicated to reminding others to stay curious. Editorial, graphic design, and writing portfolio.">
+  <section class="hero">
+    <h1
+      id="hero-title"
+      data-roles={JSON.stringify(roles)}
+      data-first-hold={firstHold}
+      data-hold={hold}
+    >
+      <!-- What screen readers hear: the whole sentence at once, not letter by letter -->
+      <span class="sr-only">Samantha Brenneman is an aspiring publisher, a student, an artist, an editor, a designer, a writer, and a book lover. She is dedicated to reminding others to stay curious.</span>
+
+      <!-- What everyone sees. The first role is already here, so the page reads fine even before the animation starts. -->
+      <span class="live" id="live" aria-hidden="true"><span class="intro">Samantha Brenneman is</span><span class="role" id="role">{roles[0]}</span> who is dedicated to reminding others to stay curious.</span>
+    </h1>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero {
+    /* Fill the first screen so the footer sits below the fold until you scroll */
+    min-height: calc(100vh - 3rem);
+    min-height: calc(100svh - 3rem);
+    display: flex; flex-direction: column; justify-content: center; /* headline centered, equal space above and below */
+    padding: 3rem 0;
+    max-width: 62rem;
+  }
+  /* On phones the nav is a top bar that takes up some height */
+  @media (max-width: 760px) {
+    .hero { min-height: calc(100svh - 3rem - 4.5rem); }
+  }
+  /* Nudge the headline to the right on larger screens */
+  @media (min-width: 761px) {
+    .hero { margin-left: 30px; }
+  }
+
+  .hero h1 { max-width: 17em; position: relative; }
+  .live { display: block; }
+  .intro { display: block; }   /* "Samantha Brenneman is" always sits alone on the first line */
+  .role { font-style: italic; color: var(--tomato); }
+</style>
+
+<script>
+  // @ts-nocheck  (stops VS Code underlining things; the code works fine)
+  const title = document.getElementById('hero-title');
+  const live = document.getElementById('live');
+  const roleEl = document.getElementById('role');
+
+  const roles = JSON.parse(title.dataset.roles);
+  const FIRST_HOLD = Number(title.dataset.firstHold);
+  const HOLD = Number(title.dataset.hold);
+
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---- Keep the headline from jumping ----
+     The role words have different lengths, so the sentence wraps onto a different number
+     of lines. We measure the tallest version and reserve that much space, so nothing
+     shifts while the words change. */
+  function reserveHeight() {
+    const probe = live.cloneNode(true);
+    probe.removeAttribute('id');
+    probe.querySelectorAll('[id]').forEach((el) => el.removeAttribute('id'));
+    probe.style.cssText = 'position:absolute;visibility:hidden;left:0;top:0;width:' + title.clientWidth + 'px;';
+    title.appendChild(probe);
+    const probeRole = probe.querySelector('.role');
+    let tallest = 0;
+    for (const r of roles) {
+      probeRole.textContent = r;
+      tallest = Math.max(tallest, probe.offsetHeight);
+    }
+    title.removeChild(probe);
+    title.style.minHeight = tallest + 'px';
+  }
+
+  /* ---- Timing ----
+     This waits at least `ms` milliseconds, then continues on the next screen refresh.
+     Tying every change to the screen's own refresh keeps the rhythm even. (Timers that
+     aren't synced to the screen make letters appear at uneven intervals, which looks jittery.) */
+  const pause = (ms) => new Promise((resolve) => {
+    const start = performance.now();
+    const check = (now) => (now - start >= ms ? resolve() : requestAnimationFrame(check));
+    requestAnimationFrame(check);
+  });
+
+  /* ---- Gentle typing ----
+     Deleting: eases in, speeds up through the middle, and slows for the last few letters,
+     like a real backspace. Each deletion has a very slightly different pace.
+     Typing: a steady cadence with a small natural wobble and a tiny pause after each word.
+     No random stumbles, so nothing feels sudden. */
+  let current = roles[0];
+  function show(text) { roleEl.textContent = text; }
+
+  async function backspace() {
+    const total = current.length;
+    const pace = 0.9 + Math.random() * 0.3;           // 0.9 to 1.2: a gentle difference between deletions
+    while (current.length > 0) {
+      const progress = 1 - current.length / total;    // 0 at the start of the deletion, 1 at the end
+      const delay = (34 + 28 * (1 - Math.sin(Math.PI * progress))) * pace;  // slow, quick, slow
+      current = current.slice(0, -1);
+      show(current);
+      await pause(delay);
+    }
+  }
+
+  async function type(word) {
+    for (let i = 1; i <= word.length; i++) {
+      current = word.slice(0, i);
+      show(current);
+      let delay = 78 + Math.random() * 22;            // steady, with a small wobble
+      if (word[i - 1] === ' ') delay += 70;           // a tiny breath between words
+      await pause(delay);
+    }
+  }
+
+  async function run() {
+    let i = 0;
+    await pause(FIRST_HOLD);                          // the first role stays put to start
+    while (true) {
+      await backspace();
+      await pause(380);                               // a quiet beat on the empty line
+      i = (i + 1) % roles.length;                     // after the last role, this wraps to the first
+      await type(roles[i]);
+      await pause(HOLD);                              // every role stays at least this long
+    }
+  }
+
+  // Wait for the fonts so the height measurement is accurate, then begin
+  const ready = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+  ready.then(() => {
+    reserveHeight();
+    let timer;
+    window.addEventListener('resize', () => { clearTimeout(timer); timer = setTimeout(reserveHeight, 150); });
+    if (!reduceMotion) run();                         // people who prefer reduced motion just see the first sentence
+  });
+</script>

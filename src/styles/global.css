@@ -1,0 +1,93 @@
+/* =====================================================================
+   GLOBAL STYLES: your design system.
+   The ":root" block below holds every color and font. Change a value
+   here and it changes across the whole site.
+   ===================================================================== */
+
+:root {
+  color-scheme: light;
+
+  /* Backgrounds */
+  --paper: #F1EEE6;        /* page background */
+  --paper-deep: #E7E2D4;   /* resting color of footer blocks */
+  --greige: #C8C0AB;       /* thin lines and borders */
+
+  /* Text-safe colors (pass WCAG AA contrast on --paper) */
+  --plum: #2D0D1A;         /* body text and headings */
+  --brown: #5F481E;        /* quieter secondary text */
+  --rust: #B04D23;     
+    --red-text: #CC2E08;     /* red that is dark enough for small text (nav hover) */    /* small links */
+
+  /* Logo colors */
+  --tomato: #EB380D;       /* large text and shapes only (too light for small text) */
+  --butter: #FFEAAF;
+  --blush: #FAB5AD;
+  --sunshine: #FFDF57;
+
+  /* Playful dot colors */
+  --rose: #C69FB2;
+  --periwinkle: #85889D;
+  --olive: #93812E;
+  --mustard: #B58520;
+  --clay: #BDA095;
+
+  /* Font pairs */
+  --serif:Georgia, "Times New Roman", serif;/* headlines */
+  --sans: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif; /* nav, captions, body */
+  --hand: "Zeyada", "Bradley Hand", cursive;                    /* tiny handwritten touches only */
+
+--overlay-bg: rgba(181, 133, 32, 0.9);
+--overlay-fg: #2D0D1A;
+--overlay-accent: #FFDF57;
+--overlay-blur: 6px;
+
+  --nav-w: 15rem;
+  --page-pad: clamp(1.25rem, 5vw, 4.5rem);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--plum);
+  font-family: var(--sans);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+
+img, svg { max-width: 100%; }
+a { color: inherit; }
+
+h1, h2, h3 {
+  font-family: var(--serif);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  margin: 0 0 0.5em;
+}
+h1 { font-size: clamp(2.3rem, 5.4vw, 4.6rem); }
+h2 { font-size: clamp(1.7rem, 3vw, 2.4rem); }
+
+/* Visible keyboard focus everywhere */
+:focus-visible { outline: 2px solid var(--plum); outline-offset: 3px; border-radius: 2px; }
+
+/* Text for screen readers only */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* "Skip to content" link: invisible until someone tabs to it */
+.skip {
+  position: absolute; left: 1rem; top: -4rem; z-index: 100;
+  background: var(--plum); color: var(--paper); padding: 0.6rem 1rem; text-decoration: none;
+}
+.skip:focus { top: 1rem; }
+
+/* A small reusable "page" wrapper for placeholder content */
+.page { max-width: 62rem; padding: clamp(2rem, 8vh, 5rem) 0 2rem; }
+.page .soon { color: var(--brown); max-width: 36rem; }

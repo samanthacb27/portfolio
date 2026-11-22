@@ -1,0 +1,69 @@
+---
+/* =====================================================================
+   BASE LAYOUT: the "frame" every page sits inside.
+   It adds the head info (title, search/social text, favicon, fonts),
+   the skip link, the left nav, your page content (the <slot />), and
+   the footer. Every page in src/pages/ wraps itself in this.
+   ===================================================================== */
+import '../styles/global.css';
+
+// Fonts are installed in the project (not loaded from Google), so they're fast and reliable.
+import '@fontsource/fraunces/400.css';
+import '@fontsource/fraunces/400-italic.css';
+import '@fontsource/figtree/400.css';
+import '@fontsource/figtree/500.css';
+import '@fontsource/figtree/600.css';
+import '@fontsource/zeyada/400.css';
+
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+
+const { title, description = 'Portfolio of Samantha Brenneman: editorial, graphic design, and writing.' } = Astro.props;
+
+// Her name is always in the browser-tab title, so searching for her finds the site.
+const fullTitle = title ? `${title} | Samantha Brenneman` : 'Samantha Brenneman | Editorial and Design Portfolio';
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+
+    <!-- Favicons: from your circle logo -->
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- Social preview basics. A proper preview image comes in the SEO step. -->
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta name="theme-color" content="#F1EEE6" />
+  </head>
+  <body>
+    <a class="skip" href="#content">Skip to content</a>
+
+    <div class="shell">
+      <Nav />
+      <div class="column">
+        <main id="content" tabindex="-1">
+          <slot />
+        </main>
+        <Footer />
+      </div>
+    </div>
+  </body>
+</html>
+
+<style>
+  .shell { display: grid; grid-template-columns: var(--nav-w) minmax(0, 1fr); min-height: 100vh; }
+  .column { display: flex; flex-direction: column; min-width: 0; }
+  main { flex: 1; padding: 3rem var(--page-pad) 0; outline: none; }
+
+  /* On phones the nav becomes a top bar, so the layout stacks */
+  @media (max-width: 760px) {
+    .shell { grid-template-columns: 1fr; }
+  }
+</style>

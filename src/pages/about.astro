@@ -1,0 +1,431 @@
+---
+/* =====================================================================
+   ABOUT ME PAGE  (src/pages/about.astro)
+   ---------------------------------------------------------------------
+   Layout:  text (left) + tilted photo-booth strip (right), with the
+            "what's in my bag" bag in the bottom-left corner.
+   The open-bag overlay uses the SAME look as your magazine overlays:
+   --overlay-bg, --overlay-fg, --overlay-accent, --overlay-blur from
+   src/styles/global.css, plus the same X button.
+   ===================================================================== */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { Image } from 'astro:assets';
+
+// Photo-booth strip (right side of the page)
+import photoBooth from '../assets/about/photo-booth.webp';
+
+// The bag (closed = default, open = after click)
+import purseClosed from '../assets/about/purse-closed.webp';
+import purseOpen from '../assets/about/purse-open.webp';
+
+// Things that spill out of the bag
+import journal from '../assets/about/journal.webp';
+import book from '../assets/about/book.webp';
+import pens from '../assets/about/pens.webp';
+import camera from '../assets/about/camera.webp';
+import sketchbook from '../assets/about/sketchbook.webp';
+---
+
+<BaseLayout
+  title="About Me | Samantha Brenneman"
+  description="Samantha Brenneman is a journalism and studio art student at UNC-Chapel Hill and editor-in-chief of Cellar Door literary magazine."
+>
+  <section class="about">
+
+    <div class="about-grid">
+      <!-- LEFT: text on top, bag at the bottom -->
+      <div class="about-left">
+        <div class="about-text">
+          <p>
+            <span class="about-hi"></span>
+            Hi! I’m Samantha Brenneman, but everyone calls me Sam. I am a senior at the University of North Carolina at Chapel Hill, majoring in journalism and studio art with a minor in art history. In addition, I am the editor-in-chief of Cellar Door, UNC’s oldest undergraduate literary magazine.
+          </p>
+          <p>
+            I was born in Raleigh, North Carolina, to parents who passed on to me a ceaseless wanderlust. I come from generations of travelers. My great-grandfather traveled across the U.S. on a motorcycle, working as a magician and sign painter. My grandparents lived in a motorhome for a decade, making the entire United States their backyard. And now my father is doing the same.
+          </p>
+          <p>
+            I live and work by three values: curiosity, gratitude, and kindness. My primary guiding principle is to wander this world and experience life with curiosity always in mind. I often tell others I am a jack of all trades, a wearer of many hats. My interests span a variety of areas: art, writing, history, travel, music, and philosophy. I am always trying to understand a topic more deeply or get to know a person better by endlessly asking any questions that come to mind.
+          </p>
+        </div>
+
+        <!-- THE BAG. No label on purpose: the hover tip is the hint. -->
+        <div class="bag-slot">
+          <div class="bag-scene" id="bag-scene" data-open="false">
+            <button
+              class="bag-button"
+              type="button"
+              id="bag-button"
+              aria-expanded="false"
+              aria-controls="bag-items"
+              aria-label="Open Sam’s bag"
+            >
+              <Image class="bag-closed" src={purseClosed} alt="A closed tan leather woven tote bag." widths={[260, 520]} sizes="280px" />
+              <Image class="bag-open" src={purseOpen} alt="The same bag, open." widths={[323, 646]} sizes="350px" />
+            </button>
+
+            <!--
+              Items that spill out. Each has two sets of numbers:
+                desktop: --l (left) --b (bottom) --w (width) --r (tilt)   [units are 1% of screen width]
+                phone:   --ml (left) --mt (top) --mw (width) --mr (tilt)
+              --i is the order they pop out in.
+            -->
+            <div class="bag-items" id="bag-items">
+              <a class="bag-item bag-link" href="/musings" style="--l:2; --b:27; --w:12; --r:-12deg; --ml:52vw; --mt:5vh; --mw:26vw; --mr:9deg; --i:0">
+                <Image src={journal} alt="A brown leather journal. Select it to read Sam’s Musings." widths={[360, 720]} sizes="260px" />
+              </a>
+              <Image class="bag-item" style="--l:19; --b:31; --w:15.75; --r:7deg; --ml:4.75vw; --mt:8vh; --mw:35vw; --mr:-6deg; --i:1" src={sketchbook} alt="A black spiral sketchbook covered in stickers, including Cellar Door Literary Magazine, with Samantha Brenneman written on tape." widths={[400, 800]} sizes="320px" />
+              <Image class="bag-item" style="--l:38; --b:19; --w:11; --r:15deg; --ml:6vw; --mt:39vh; --mw:27vw; --mr:10deg; --i:2" src={book} alt="The Year of Magical Thinking by Joan Didion, a paperback with a cream cover and widely spaced black and blue lettering." widths={[340, 680]} sizes="280px" />
+              <Image class="bag-item" style="--l:26; --b:4; --w:17.50; --r:45deg; --ml:38vw; --mt:34vh; --mw:35vw; --mr:5deg; --i:3" src={camera} alt="A silver Canon Sure Shot 85 Zoom film camera with a black strap." widths={[440, 880]} sizes="350px" />
+              <Image class="bag-item" style="--l:51; --b:2; --w:10; --r:30deg; --ml:78vw; --mt:37vh; --mw:15vw; --mr:14deg; --i:4" src={pens} alt="Three Bic Round Stic pens in blue, black, and red." widths={[300, 600]} sizes="200px" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: tilted photo-booth strip -->
+      <div class="about-photo">
+        <Image
+          src={photoBooth}
+          alt="A black-and-white photo-booth strip of Samantha making four playful faces: a closed-mouth smile, a pout with her chin on her hands, a big grin, and a pout looking up."
+          widths={[400, 703]}
+          sizes="(max-width: 760px) 34vw, 30vw"
+          loading="eager"
+        />
+      </div>
+    </div>
+
+    <!-- Overlay behind the open bag: same color, blur and X as the magazine overlays -->
+    <div class="bag-overlay" id="bag-overlay"></div>
+    <button class="bag-close" id="bag-close" type="button" aria-label="Close">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false">
+        <path d="M5 5 L19 19 M19 5 L5 19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none" />
+      </svg>
+    </button>
+  </section>
+</BaseLayout>
+
+<style>
+  /* ---- Sizes you might want to tweak --------------------------------- */
+  .about {
+    --photo-h: clamp(560px, 58vw, 980px);        /* height of the photo strip (desktop) */
+    --photo-col: calc(var(--photo-h) * 0.46);    /* room the tilted strip needs sideways */
+    --bag-w: clamp(176px, 18vw, 280px);          /* closed bag width (desktop) */
+    --u: 1vw;                                    /* unit for item sizes/positions */
+  }
+
+  /* ---- Page layout (desktop) ----------------------------------------- */
+  .about-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--photo-col);
+    column-gap: 3vw;
+    width: min(100%, 72vw);         /* text + photo together stay under 3/4 of the screen */
+    align-items: stretch;
+  }
+  .about-left {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* text at the top, bag at the bottom-left */
+    gap: 3rem;
+    min-width: 0;
+  }
+
+  .about-text p {
+    margin: 0 0 1.4em;
+    font-size: clamp(1rem, 1.15vw, 1.2rem);
+    line-height: 1.75;
+    max-width: 62ch;
+  }
+  .about-text p:last-child { margin-bottom: 0; }
+
+
+  /* ---- Tilted photo (desktop: tilted 15 degrees to the right) -------- */
+  .about-photo {
+    position: relative;
+    height: var(--photo-h);
+    margin-top: 1rem;
+  }
+  .about-photo :global(img) {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    height: var(--photo-h);
+    width: auto;
+    max-width: none;
+    transform: translate(-50%, -50%) rotate(15deg);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  }
+
+  /* ---- The bag -------------------------------------------------------- */
+  /* The "slot" keeps the bag's space reserved so the page never jumps */
+  .bag-slot {
+    position: relative;
+    bottom: 2rem;
+    width: var(--bag-w);
+    aspect-ratio: 520 / 591;
+  }
+  .bag-scene {
+    position: absolute;
+    inset: 0;
+    z-index: 1;                     /* low, so the nav bar stays on top while scrolling */
+  }
+  .bag-scene[data-open='true'] {
+    z-index: 60;                    /* above the overlay once the bag is open */
+  }
+  .bag-button {
+    position: absolute;
+    inset: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .bag-button:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 6px;
+    border-radius: 6px;
+  }
+  .bag-button :global(img) { display: block; position: absolute; left: 0; bottom: 0; max-width: none; height: auto; }
+
+  .bag-closed {
+    width: 100%;
+    transform-origin: 20% 100%;
+    transition: transform 0.25s cubic-bezier(0.3, 1.6, 0.5, 1);
+  }
+  /* Hover/focus: the bag tips and lifts a little, the only hint that it's clickable */
+  .bag-button:hover .bag-closed,
+  .bag-button:focus-visible .bag-closed {
+    transform: rotate(-5deg) translateY(-4px);
+  }
+  .bag-open { width: 145%; translate: 0 -2rem; display: none !important; }
+  .bag-scene[data-open='true'] .bag-closed { display: none !important; }
+  .bag-scene[data-open='true'] .bag-open   { display: block !important; }
+
+  /* ---- Items that spill out ------------------------------------------- */
+  .bag-items {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;           /* clicks pass through to the overlay (which closes the bag) ... */
+  }
+  .bag-item {
+    position: absolute;
+    left: calc(var(--l) * var(--u));
+    bottom: calc(var(--b) * var(--u));
+    width: calc(var(--w) * var(--u));
+    min-width: calc(var(--w) * 8px);
+    height: auto;
+    max-width: none;
+    transform: rotate(var(--r));
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+    opacity: 0;
+    visibility: hidden;
+    /* closed state: tucked back into the bag */
+    translate: calc(var(--l) * var(--u) * -1 + 2vw) calc(var(--b) * var(--u) * 0.6);
+    scale: 0.2;
+    transition:
+      opacity 0.2s ease,
+      translate 0.5s cubic-bezier(0.2, 1.3, 0.4, 1),
+      scale 0.5s cubic-bezier(0.2, 1.3, 0.4, 1),
+      transform 0.2s cubic-bezier(0.3, 1.6, 0.5, 1),
+      visibility 0s linear 0.5s;
+  }
+  .bag-scene[data-open='true'] .bag-item {
+    opacity: 1;
+    visibility: visible;
+    translate: 0 0;
+    scale: 1;
+    transition-delay: calc(var(--i) * 70ms), calc(var(--i) * 70ms), calc(var(--i) * 70ms), 0s, 0s;
+  }
+
+  /* The journal is a link to Musings (the only clickable item) */
+  .bag-link { display: block; }
+  .bag-link :global(img) { display: block; width: 100%; height: auto; }
+  .bag-scene[data-open='true'] .bag-link { pointer-events: auto; cursor: pointer; }
+  .bag-scene[data-open='true'] .bag-link:hover,
+  .bag-scene[data-open='true'] .bag-link:focus-visible {
+    transform: rotate(calc(var(--r) + 4deg)) translateY(-6px);  /* little tip + lift, like the bag */
+  }
+  .bag-link:focus-visible { outline: 2px solid currentColor; outline-offset: 6px; border-radius: 4px; }
+
+  /* ---- Overlay: same look as the magazine overlays -------------------- */
+  .bag-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    background: var(--overlay-bg, rgba(45, 13, 26, 0.9));
+    -webkit-backdrop-filter: blur(var(--overlay-blur, 0px));
+    backdrop-filter: blur(var(--overlay-blur, 0px));
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .bag-overlay.is-open { opacity: 1; pointer-events: auto; }
+
+  /* The X in the top right corner (copied from the magazine overlay) */
+  .bag-close {
+    position: fixed;
+    z-index: 70;
+    top: max(0.9rem, env(safe-area-inset-top, 0px));
+    right: clamp(0.9rem, 3vw, 2rem);
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    background: none;
+    border: 0;
+    border-radius: 50%;
+    color: var(--overlay-fg, #F1EEE6);
+    cursor: pointer;
+    transition: color 0.15s, opacity 0.3s ease;
+    opacity: 0;
+    visibility: hidden;
+  }
+  .bag-close.is-open { opacity: 1; visibility: visible; }
+  .bag-close:hover { color: var(--overlay-accent, #FFDF57); }
+  .bag-close:focus-visible { outline: 2px solid currentColor; }
+
+  /* ---- Phones --------------------------------------------------------- */
+  @media (max-width: 760px) {
+    .about {
+      --u: 2vw;
+      --bag-w: 46vw;                /* bigger bag on phones */
+    }
+    .about-grid {
+      grid-template-columns: minmax(0, 1fr) 33vw;   /* strip takes up 1/3 of the screen */
+      column-gap: 1rem;
+      row-gap: 4rem;
+      width: 100%;
+    }
+    .about-left { display: contents; }               /* lets text and bag go to different rows */
+    .about-text { grid-column: 1; grid-row: 1; }
+    .about-text p { font-size: 0.95rem; line-height: 1.65; }
+    .about-hi { font-size: clamp(2.2rem, 11vw, 3.2rem); }
+
+    /* Photo runs alongside the text, straight (no tilt). The cell is as tall as the text,
+       and the photo follows you down it as you scroll, stopping where the text ends. */
+    .about-photo {
+      grid-column: 2;
+      grid-row: 1;
+      height: auto;
+      margin-top: 0;
+      position: static;
+    }
+    .about-photo :global(img) {
+      position: sticky;
+      top: 5rem;
+      left: auto;
+      transform: none;
+      height: auto;
+      width: 100%;
+      display: block;
+    }
+
+    /* Bag sits underneath both */
+    .bag-slot { grid-column: 1 / -1; grid-row: 2; }
+
+    /* Open bag: centered near the bottom of the screen, items fill the rest of the screen */
+    .bag-scene[data-open='true'] {
+      position: fixed;
+      inset: auto;
+      left: calc(50% - var(--bag-w) * 0.621);
+      bottom: calc(4vh + env(safe-area-inset-bottom, 0px));
+      width: var(--bag-w);
+      height: calc(var(--bag-w) * 1.1365);
+    }
+    .bag-items { position: fixed; left: 0; top: 0; width: 100%; height: 100%; }
+    .bag-item {
+      left: var(--ml);
+      top: var(--mt);
+      bottom: auto;
+      width: var(--mw);
+      min-width: 0;
+      transform: rotate(var(--mr));
+      translate: 0 45vh;
+    }
+    .bag-scene[data-open='true'] .bag-link:hover,
+    .bag-scene[data-open='true'] .bag-link:focus-visible {
+      transform: rotate(calc(var(--mr) + 4deg)) translateY(-6px);
+    }
+  }
+
+  /* ---- Reduced motion: no tipping or flying; things just appear ------ */
+  @media (prefers-reduced-motion: reduce) {
+    .bag-closed, .bag-item, .bag-overlay, .bag-close { transition: none !important; }
+    .bag-button:hover .bag-closed,
+    .bag-button:focus-visible .bag-closed {
+      transform: none;
+      filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.3)); /* still a hover hint, no movement */
+    }
+    .bag-scene[data-open='true'] .bag-link:hover,
+    .bag-scene[data-open='true'] .bag-link:focus-visible {
+      transform: rotate(var(--r));
+      filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45));
+    }
+    .bag-item { translate: 0 0; scale: 1; }
+  }
+
+  .visually-hidden {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+  }
+</style>
+
+<script>
+  // @ts-nocheck  (stops VS Code underlining things; the code works fine)
+  // Open/close the bag. The bag, the dimmed background, the X, or the Esc key all toggle it.
+  const scene = document.getElementById('bag-scene');
+  const button = document.getElementById('bag-button');
+  const overlay = document.getElementById('bag-overlay');
+  const closeBtn = document.getElementById('bag-close');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const phone = window.matchMedia('(max-width: 760px)');
+
+  function setOpen(open) {
+    if (!scene || !button || !overlay || !closeBtn) return;
+
+    // On phones the bag glides to the center of the screen. Note where it is first...
+    const before = button.getBoundingClientRect();
+
+    scene.dataset.open = String(open);
+    overlay.classList.toggle('is-open', open);
+    closeBtn.classList.toggle('is-open', open);
+    button.setAttribute('aria-expanded', String(open));
+    button.setAttribute('aria-label', open ? 'Close Sam’s bag' : 'Open Sam’s bag');
+    document.documentElement.style.overflow = open ? 'hidden' : '';
+
+    if (phone.matches) {
+      // ...then slide it from the old spot to the new one
+      if (!reduceMotion.matches) {
+        const after = button.getBoundingClientRect();
+        button.animate(
+          [
+            { transform: `translate(${before.left - after.left}px, ${before.top - after.top}px)` },
+            { transform: 'translate(0, 0)' },
+          ],
+          { duration: 450, easing: 'cubic-bezier(0.3, 1, 0.4, 1)' }
+        );
+      }
+    } else if (open) {
+      // Desktop: make sure the bag and its spilled items are on screen
+      scene.scrollIntoView({ block: 'end', behavior: reduceMotion.matches ? 'auto' : 'smooth' });
+    }
+
+    if (open) closeBtn.focus({ preventScroll: true });
+  }
+
+  const isOpen = () => scene?.dataset.open === 'true';
+
+  button?.addEventListener('click', () => setOpen(!isOpen()));
+  overlay?.addEventListener('click', () => setOpen(false));
+  closeBtn?.addEventListener('click', () => { setOpen(false); button?.focus({ preventScroll: true }); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && isOpen()) {
+      setOpen(false);
+      button?.focus({ preventScroll: true });
+    }
+  });
+</script>
