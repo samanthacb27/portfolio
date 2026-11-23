@@ -60,7 +60,11 @@ const hold = 2000;
 
   .hero h1 { max-width: 17em; position: relative; }
   .live { display: block; }
-  .intro { display: block; }   /* "Samantha Brenneman is" always sits alone on the first line */
+.intro { display: block; }   /* "Samantha Brenneman is" sits alone on the first line on desktop */
+@media (max-width: 760px) {
+  .intro { display: inline; }        /* on phones, the typed words continue right after "is" */
+  .intro::after { content: " "; }    /* adds the space between "is" and the typed words */
+}
   .role { font-style: italic; color: var(--tomato); }
 </style>
 
